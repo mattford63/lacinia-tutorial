@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
             [com.walmartlabs.lacinia.util :as util]
             [com.walmartlabs.lacinia.schema :as schema]
+            [com.walmartlabs.lacinia.resolve :refer [resolve-as]]
             [clojure.edn :as edn]
             [com.stuartsierra.component :as component]
             [clojure-game-geek.db :as db]))
@@ -43,6 +44,32 @@
   (fn [_ _ game-rating]
     (db/find-game-by-id db (:game_id game-rating))))
 
+(defn rate-game
+  [db]
+  (fn [_ args _]
+    (let [{game-id :game_id
+           member-id :member_id
+           rating :rating} args
+          game (db/find-game-by-id db game-id)
+          member (db/find-member-by-id db member-id)]
+      (cond
+        (nil? game)
+        (resolve-as nil {:message "Game not found."
+                         :status 404})
+
+        (nil? member)
+        (resolve-as nil {:message "Member not found."
+                         :status 404})
+
+        (not (<= 1 rating 5))
+        (resolve-as nil {:message "Rating must be between 1 and 5"
+                         :status 400})
+
+        :else
+        (do
+          (db/upsert-game-rating db game-id member-id rating)
+          game)))))
+
 (defn resolver-map
   [component]
   (let [db (:db component)]
@@ -52,7 +79,8 @@
      :BoardGame/rating-summary (rating-summary db)
      :Designer/games (designer-games db)
      :Member/ratings (member-ratings db)
-     :GameRating/game (game-rating->game db)}))
+     :GameRating/game (game-rating->game db)
+     :mutation/rate-game (rate-game db)}))
 
 (defn load-schema
   [component]
@@ -74,4 +102,4 @@
     (assoc this :schema nil)))
 
 (defn new-schema-provider []
-  {:schema-provider (map->SchemaProvider {})})
+  {:schema-provider (component/using (map->SchemaProvider {}) [:db])})

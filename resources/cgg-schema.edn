@@ -71,4 +71,13 @@
    :description "Select a member by id"
    :args
    {:id {:type (non-null ID)}}
-   :resolve :query/member-by-id}}}
+   :resolve :query/member-by-id}}
+
+ :mutations
+ {:rate_game
+  {:type :BoardGame
+   :args
+   {:game_id {:type (non-null ID)}
+    :member_id {:type (non-null ID)}
+    :rating {:type (non-null Int)}}
+   :resolve :mutation/rate-game}}}
