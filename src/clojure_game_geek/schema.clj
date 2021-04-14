@@ -7,6 +7,10 @@
             [com.stuartsierra.component :as component]
             [clojure-game-geek.db :as db]))
 
+(defn games [db]
+  (fn [_ _ _]
+    (db/list-games db)))
+
 (defn game-by-id [db]
   (fn [_ args _]
     (db/find-game-by-id db (:id args))))
@@ -17,16 +21,16 @@
 
 (defn board-game-designers [db]
   (fn [_ _ board-game]
-    (db/list-designers-for-game db (:id board-game))))
+    (db/list-designers-for-game db (:game_id board-game))))
 
 (defn designer-games [db]
   (fn [_ _ designer]
-    (db/list-games-for-designer db (:id designer))))
+    (db/list-games-for-designer db (:designer_id designer))))
 
 (defn rating-summary
   [db]
   (fn [_ _ board-game]
-    (let [ratings (map :rating (db/list-ratings-for-games db (:id board-game)))
+    (let [ratings (map :rating (db/list-ratings-for-games db (:game_id board-game)))
           n (count ratings)]
       {:count n
        :average (if (zero? n)
@@ -37,7 +41,7 @@
 (defn member-ratings
   [db]
   (fn [_ _ member]
-    (db/list-ratings-for-member db (:id member))))
+    (db/list-ratings-for-member db (:member_id member))))
 
 (defn game-rating->game
   [db]
@@ -75,6 +79,7 @@
   (let [db (:db component)]
     {:query/game-by-id (game-by-id db)
      :query/member-by-id (member-by-id db)
+     :query/games (games db)
      :BoardGame/designers (board-game-designers db)
      :BoardGame/rating-summary (rating-summary db)
      :Designer/games (designer-games db)

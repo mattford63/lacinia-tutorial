@@ -7,5 +7,8 @@
                  [clj-commons/pomegranate "1.2.0"]
                  [com.walmartlabs/lacinia-pedestal "0.15.0"]
                  [io.aviso/logging "0.3.2"]
-                 [com.stuartsierra/component "1.0.0"]]
+                 [com.stuartsierra/component "1.0.0"]
+                 [org.clojure/java.jdbc "0.7.12"]
+                 [org.postgresql/postgresql "42.2.19"]
+                 [com.mchange/c3p0 "0.9.5.5"]]
   :repl-options {:init-ns clojure-game-geek.core})

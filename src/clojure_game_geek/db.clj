@@ -1,20 +1,29 @@
 (ns clojure-game-geek.db
   (:require [clojure.edn :as edn]
-            [clojure.java.io :as io]
-            [com.stuartsierra.component :as component]))
+            [clojure.java.jdbc :as jdbc]
+            [com.stuartsierra.component :as component])
+  (:import (com.mchange.v2.c3p0 ComboPooledDataSource)))
 
-(defrecord ClojureGameGeekDb [data]
+(defn ^:private pooled-data-source
+  [host dbname user password port]
+  {:datasource
+   (doto (ComboPooledDataSource.)
+     (.setDriverClass "org.postgresql.Driver")
+     (.setJdbcUrl (str "jdbc:postgresql://" host ":" port "/" dbname))
+     (.setUser user)
+     (.setPassword password))})
+
+(defrecord ClojureGameGeekDb [ds]
 
   component/Lifecycle
 
   (start [this]
-    (assoc this :data (-> (io/resource "cgg-data.edn")
-                          slurp
-                          edn/read-string
-                          atom)))
+    (assoc this :ds (pooled-data-source "localhost" "cggdb"
+                                        "cgg_role" "lacinia" 25432)))
 
   (stop [this]
-    (assoc this :data nil)))
+    (-> ds :datasource .close)
+    (assoc this :ds nil)))
 
 (defn new-db
   []
@@ -23,13 +32,10 @@
 ;; find - primary key lookup
 ;; list - sequence lookup
 (defn find-game-by-id
-  [db game-id]
-  (->> db
-       :data
-       deref
-       :games
-       (filter #(= game-id (:id %)))
-       first))
+  [component game-id]
+  (first
+   (jdbc/query (:ds component)
+               ["select game_id, name, summary, min_players, max_players, created_at, updated_at from board_game where game_id = ?" game-id])))
 
 (defn find-member-by-id
   [db member-id]
@@ -39,6 +45,13 @@
        :members
        (filter #(= member-id (:id %)))
        first))
+
+(defn list-games
+  [db]
+  (->> db
+       :data
+       deref
+       :games))
 
 (defn list-designers-for-game
   [db game-id]
