@@ -6,35 +6,34 @@
 
 (defn ^:private pooled-data-source
   [host dbname user password port]
-  {:datasource
-   (doto (ComboPooledDataSource.)
-     (.setDriverClass "org.postgresql.Driver")
-     (.setJdbcUrl (str "jdbc:postgresql://" host ":" port "/" dbname))
-     (.setUser user)
-     (.setPassword password))})
+  (doto (ComboPooledDataSource.)
+    (.setDriverClass "org.postgresql.Driver")
+    (.setJdbcUrl (str "jdbc:postgresql://" host ":" port "/" dbname))
+    (.setUser user)
+    (.setPassword password)))
 
-(defrecord ClojureGameGeekDb [ds]
+(defrecord ClojureGameGeekDb [datasource]
 
   component/Lifecycle
 
   (start [this]
-    (assoc this :ds (pooled-data-source "localhost" "cggdb"
-                                        "cgg_role" "lacinia" 25432)))
+    (assoc this :datasource (pooled-data-source "localhost" "cggdb"
+                                                 "cgg_role" "lacinia" 25432)))
 
   (stop [this]
-    (-> ds :datasource .close)
-    (assoc this :ds nil)))
+    (-> datasource .close)
+    (assoc this :datasource nil)))
 
 (defn new-db
   []
-  {:db (map->ClojureGameGeekDb {})})
+  (map->ClojureGameGeekDb {}))
 
 ;; find - primary key lookup
 ;; list - sequence lookup
 (defn find-game-by-id
-  [component game-id]
+  [db game-id]
   (first
-   (jdbc/query (:ds component)
+   (jdbc/query db
                ["select game_id, name, summary, min_players, max_players, created_at, updated_at from board_game where game_id = ?" game-id])))
 
 (defn find-member-by-id

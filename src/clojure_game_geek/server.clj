@@ -21,5 +21,4 @@
 
 (defn new-server
   []
-  {:server (component/using (map->Server {:port 8888})
-                            [:schema-provider])})
+  (map->Server {:port 8888}))

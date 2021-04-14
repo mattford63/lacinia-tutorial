@@ -7,7 +7,11 @@
 
 (defn new-system
   []
-  (merge (component/system-map)
-         (server/new-server)
-         (schema/new-schema-provider)
-         (db/new-db)))
+  (component/system-map
+   :server
+   (component/using (server/new-server)
+                    [:schema-provider])
+   :schema-provider
+   (component/using (schema/new-schema-provider)
+                    [:db])
+   :db (db/new-db)))

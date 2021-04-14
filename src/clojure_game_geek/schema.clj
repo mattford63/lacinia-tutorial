@@ -75,36 +75,35 @@
           game)))))
 
 (defn resolver-map
-  [component]
-  (let [db (:db component)]
-    {:query/game-by-id (game-by-id db)
-     :query/member-by-id (member-by-id db)
-     :query/games (games db)
-     :BoardGame/designers (board-game-designers db)
-     :BoardGame/rating-summary (rating-summary db)
-     :Designer/games (designer-games db)
-     :Member/ratings (member-ratings db)
-     :GameRating/game (game-rating->game db)
-     :mutation/rate-game (rate-game db)}))
+  [db]
+  {:query/game-by-id (game-by-id db)
+   :query/member-by-id (member-by-id db)
+   :query/games (games db)
+   :BoardGame/designers (board-game-designers db)
+   :BoardGame/rating-summary (rating-summary db)
+   :Designer/games (designer-games db)
+   :Member/ratings (member-ratings db)
+   :GameRating/game (game-rating->game db)
+   :mutation/rate-game (rate-game db)})
 
 (defn load-schema
-  [component]
+  [db]
   (-> (io/resource "cgg-schema.edn")
       slurp
       edn/read-string
-      (util/attach-resolvers (resolver-map component))
+      (util/attach-resolvers (resolver-map db))
       (schema/compile)))
 
 
-(defrecord SchemaProvider [schema]
+(defrecord SchemaProvider [db schema]
 
   component/Lifecycle
 
   (start [this]
-    (assoc this :schema (load-schema this)))
+    (assoc this :schema (load-schema db)))
 
   (stop [this]
     (assoc this :schema nil)))
 
 (defn new-schema-provider []
-  {:schema-provider (component/using (map->SchemaProvider {}) [:db])})
+  (map->SchemaProvider {}))
