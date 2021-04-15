@@ -30,7 +30,7 @@
 (defn rating-summary
   [db]
   (fn [_ _ board-game]
-    (let [ratings (map :rating (db/list-ratings-for-games db (:game_id board-game)))
+    (let [ratings (map :rating (db/list-ratings-for-game db (:game_id board-game)))
           n (count ratings)]
       {:count n
        :average (if (zero? n)
